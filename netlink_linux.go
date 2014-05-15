@@ -84,15 +84,19 @@ func (t *Connection) Read() ([]byte, error) {
 
 	binary.Read(readBuffer, binary.LittleEndian, &message.Header)
 
-	message.Data = make([]byte, message.Header.Len-syscall.NLMSG_HDRLEN)
+	if message.Header.Len > syscall.NLMSG_HDRLEN {
+		message.Data = make([]byte, message.Header.Len-syscall.NLMSG_HDRLEN)
 
-	_, err := readBuffer.Read(message.Data)
-	if err != nil {
-		syscall.Close(t.socket)
-		return []byte{}, err
+		_, err := readBuffer.Read(message.Data)
+		if err != nil {
+			syscall.Close(t.socket)
+			return []byte{}, err
+		}
+
+		return message.Data, nil
+	} else {
+		return []byte{}, nil
 	}
-
-	return message.Data, nil
 }
 
 func (t *Connection) Write(message []byte) error {
