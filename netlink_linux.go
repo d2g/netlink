@@ -27,7 +27,13 @@ type ioreader struct {
 
 func (s ioreader) Read(b []byte) (n int, err error) {
 	nr, _, e := syscall.Recvfrom(s.Connection, b, 0)
-	return nr, os.NewSyscallError("recvfrom", e)
+
+	//2014-07-21 Note: This stops the reader creating a panic in bufio/bufio.go line 99
+	if nr < 0 {
+		return 0, os.NewSyscallError("recvfrom", e)
+	} else {
+		return nr, os.NewSyscallError("recvfrom", e)
+	}
 }
 
 func GetNetlinkSocket(socketid int, connectiontype ConnectionType) Connection {
